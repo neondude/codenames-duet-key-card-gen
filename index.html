@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>5x5 Grid Example</title>
+  <style>
+    /* Basic styling for the 5x5 grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 60px);
+      grid-gap: 5px;
+      margin-top: 20px;
+    }
+    .cell {
+      /* default tan color */
+      width: 60px;
+      height: 60px;
+      border: 1px solid #999;
+      box-sizing: border-box;
+    }
+    .green {
+      background-color: green;
+    }
+
+    .black {
+      background-color: black;
+    }
+
+    .tan {
+      background-color: tan;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Form container -->
+  <div id="formContainer">
+    <label for="seedInput">Seed:</label>
+    <input type="text" id="seedInput" /><br><br>
+
+    <label>Side:</label>
+    <input type="radio" id="side1" name="sideInput" value="1" checked>
+    <label for="side1">1</label>
+    <input type="radio" id="side2" name="sideInput" value="2">
+    <label for="side2">2</label>
+    <br><br>
+
+    <button onclick="generateGrid()">Submit</button>
+  </div>
+
+  <!-- Grid container (initially hidden) -->
+  <div id="gridContainer" style="display: none;">
+    <div id="grid" class="grid"></div>
+  </div>
+
+  <script>
+    // Simple linear congruential generator for demonstration
+    // It uses the seed string to produce a pseudo-random sequence
+    function lcg(seedString, callCount) {
+      // Convert seed string into an initial numeric state
+      let state = 0;
+      for (let i = 0; i < seedString.length; i++) {
+        state = (state * 31 + seedString.charCodeAt(i)) % 2147483647;
+      }
+
+      // Advance the generator 'callCount' times
+      for (let j = 0; j < callCount; j++) {
+        // LCG parameters (example values)
+        state = (state * 1664525 + 1013904223) % 4294967296;
+      }
+
+      return state;
+    }
+
+    function generateGrid() {
+      // 1. Gather input values
+      const seed = document.getElementById('seedInput').value;
+      const side = document.querySelector('input[name="sideInput"]:checked').value;
+
+      // Hide the form
+      document.getElementById('formContainer').style.display = 'none';
+
+      // Show the grid container
+      const gridContainer = document.getElementById('gridContainer');
+      gridContainer.style.display = 'block';
+
+      const grid = document.getElementById('grid');
+
+      // Clear any old cells if the function is called multiple times
+      grid.innerHTML = '';
+
+      // 2. Generate a list of all 25 cell indices
+      const indices = Array.from({length: 25}, (_, i) => i);
+
+      // 3. Shuffle the indices using the LCG seeded with the user input
+      //    so it will be deterministic for the same seed
+      let currentIndex = indices.length;
+      let callCount = 0;
+
+      while (currentIndex > 0) {
+        // get a pseudo-random number from lcg
+        const randNum = lcg(seed, callCount);
+        callCount++;
+
+        // Use modulo to pick a random index
+        const randIndex = randNum % currentIndex;
+
+        // Decrease currentIndex, then swap
+        currentIndex--;
+        [indices[currentIndex], indices[randIndex]] = [indices[randIndex], indices[currentIndex]];
+      }
+
+      // -1 for black assasins
+      // 1 for green agents
+      // 0 for normal citizens
+      const SIDE1 = [-1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, -1, 0, 0, 0, 0, 0, 0, 0, -1];
+      const SIDE2 = [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0,];
+
+      // choose array based on side
+      const givenSide = side == 1 ? SIDE1 : SIDE2;
+
+      // Create the 5x5 cells and color them
+      for (let i = 0; i < 25; i++) {
+        const cell = document.createElement('div');
+        cell.classList.add('cell');
+
+        if (givenSide[indices[i]] == -1) {
+          cell.classList.add('black');
+        } else if (givenSide[indices[i]] == 1) {
+          cell.classList.add('green');
+        } else {
+          cell.classList.add('tan');
+        }
+
+        grid.appendChild(cell);
+      }
+
+      // Optionally, do something with 'side' if needed:
+      console.log("Seed:", seed, "| Side:", side);
+    }
+  </script>
+</body>
+</html>
